@@ -1,0 +1,54 @@
+name: Terraform Glue Data Catalog Pipeline
+
+on:
+  pull_request:
+  push:
+    branches: ["*"]
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      # 1️⃣ Checkout do código
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Conecta GitHub à AWS via OIDC
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::458144597632:role/role-github
+          aws-region: us-east-1
+
+      # 3️⃣ Instala Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # 4️⃣ BUILD — terraform init
+      - name: Terraform Init
+        run: terraform init
+
+      # 5️⃣ TEST — valida sintaxe
+      - name: Terraform Validate
+
+      # 6️⃣ Criar plano do Terraform
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      # 7️⃣ Converter plano para JSON (entrada do TAAC)
+      - name: Terraform Show (JSON)
+        run: terraform show -json tfplan > tfplan.json
+
+      # 8️⃣ Executar TAAC em Python (teste como código)
+      - name: Run TAAC (Python)
+        run: python taac/taac_minimo.py
+
+      # 9️⃣ Aplicar infraestrutura (somente na main)
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve tfplan
