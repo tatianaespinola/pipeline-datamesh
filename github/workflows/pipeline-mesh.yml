@@ -1,9 +1,9 @@
 name: Terraform Glue Data Catalog Pipeline
 
 on:
-  pull_request:
   push:
-    branches: ["*"]
+    branches: 
+    - "*"
 
 jobs:
   terraform:
